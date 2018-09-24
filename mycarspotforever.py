@@ -2,12 +2,11 @@ import argparse
 import logging
 import os
 import sys
+import time
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import NoSuchElementException
-from selenium.common.exceptions import ElementNotVisibleException
-from selenium.common.exceptions import WebDriverException
 
 """
 @author:     Marius Mézerette
@@ -38,24 +37,26 @@ Distributed on an "AS IS" basis without warranties
 or conditions of any kind, either express or implied.
 
 USAGE
-''' % (program_shortdesc, str(__date__))
+'''.format(program_shortdesc, str(__date__))
 
 
-CHROMEDRIVER_PATH = './chromedriver'
-GECKODRIVER_PATH = './geckodriver'
 URL_MYCARSPOT_LOGIN = 'https://mycarspot.fr/docapostsophia/Login'
+CHROMEDRIVER_DEFAULT_PATH = './chromedriver'
+GECKODRIVER_DEFAULT_PATH = './geckodriver'
 WINDOW_SIZE = (1280, 1024)
 WAITING_MAX_TIME = 20
+SLEEP_TIME = 5
 
 
 class SeleniumProcessor(object):
 
-    def __init__(self, driver='chrome', driver_executable_path=CHROMEDRIVER_PATH):
+    def __init__(self, driver='chrome', driver_executable_path=CHROMEDRIVER_DEFAULT_PATH, headless=True):
         if driver == 'firefox':
-            self.driver = webdriver.Firefox()
+            self.driver = webdriver.Firefox(executable_path=driver_executable_path)
         elif driver == 'chrome':
             chrome_options = Options()
-            #chrome_options.add_argument('--headless')
+            if headless:
+                chrome_options.add_argument('--headless')
             chrome_options.add_argument('--disable-gpu')
             self.driver = webdriver.Chrome(
                 executable_path=driver_executable_path,
@@ -103,21 +104,34 @@ class MyCarSpotForEver(object):
             raise
 
 
-def configure_selenium(driver_name='chrome'):
-    return SeleniumProcessor(driver=driver_name)
+def configure_selenium(driver_name, driver_executable_path, debug=False):
+    return SeleniumProcessor(driver=driver_name,
+                             driver_executable_path=driver_executable_path,
+                             headless=not debug)
 
 
 def process_args(args, defaults):
     parser = argparse.ArgumentParser(description=program_license, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.prog = 'mycarspot'
-    parser.add_argument("-d", "--driver", choices=["firefox", "chrome"],
-                        default="chrome", help="Which driver should be used (default: %(default)s)")
-    parser.add_argument('-v', '--version', action='version', version=program_version_message)
-    parser.add_argument("--maternal_url",
-                        default="http://www.geocaching.com/geocache/",
-                        type=str,
-                        help="Maternal URL of geocaches (default: %(default)s)")
-    parser.add_argument("-l", "--logins", required=True, help="Login names and passwords in 'user1:passwd1,user2:passwd2'")
+    parser.prog = 'mycarspotforever'
+    parser.add_argument('--driver',
+                        choices=['firefox', 'chrome'],
+                        default="chrome",
+                        help="Which driver should be used (default: %(default)s)")
+    parser.add_argument('--driver_path',
+                        metavar='driver_path',
+                        default=CHROMEDRIVER_DEFAULT_PATH,
+                        help='Path to web driver wich should be used (default: {})'.format(CHROMEDRIVER_DEFAULT_PATH))
+    parser.add_argument('--version',
+                        action='version',
+                        version=program_version_message)
+    parser.add_argument('--debug',
+                        action='store_true',
+                        default=True,
+                        help="Launch webdriver with GUI (no headless mode).")
+    parser.add_argument('--logins',
+                        metavar='logins',
+                        required=True,
+                        help="Login names and passwords in 'user1:passwd1,user2:passwd2'")
 
     parameters = parser.parse_args(args)
     return parameters
@@ -135,13 +149,17 @@ def main(args=None):
     console.setFormatter(formatter)
     logging.getLogger('').addHandler(console)
 
-    selenium_processor = configure_selenium(driver_name=parameters.driver)
+    selenium_processor = configure_selenium(driver_name=parameters.driver,
+                                            driver_executable_path=parameters.driver_path,
+                                            debug=parameters.debug)
 
     users = parameters.logins.split(",")
     for user in users:
         login_name, password = user.split(":")
         mcs = MyCarSpotForEver(selenium_processor, login_name, password)
+        time.sleep(SLEEP_TIME)
         mcs.confirm()
+        time.sleep(SLEEP_TIME)
 
 
 if __name__ == "__main__":
