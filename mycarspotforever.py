@@ -45,7 +45,7 @@ CHROMEDRIVER_DEFAULT_PATH = './chromedriver'
 GECKODRIVER_DEFAULT_PATH = './geckodriver'
 WINDOW_SIZE = (1280, 1024)
 WAITING_MAX_TIME = 20
-SLEEP_TIME = 5
+SLEEP_TIME = 3
 
 
 class SeleniumProcessor(object):
@@ -100,7 +100,7 @@ class MyCarSpotForEver(object):
         try:
             self.selenium.click('//*[@id="ButtonConfirm"]')
         except NoSuchElementException as ex:
-            logging.error('confirm error: ' + ex.msg)
+            logging.error('confirm error (invalid credentials or website has changed): ' + ex.msg)
             raise
 
 
