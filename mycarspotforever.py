@@ -58,6 +58,7 @@ class SeleniumProcessor(object):
             if headless:
                 chrome_options.add_argument('--headless')
             chrome_options.add_argument('--disable-gpu')
+            chrome_options.add_argument('--no-sandbox')
             self.driver = webdriver.Chrome(
                 executable_path=driver_executable_path,
                 options=chrome_options
