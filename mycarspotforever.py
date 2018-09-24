@@ -17,7 +17,7 @@ from selenium.common.exceptions import NoSuchElementException
 """
 
 __all__ = []
-__version__ = 0.1
+__version__ = 0.2
 __date__ = '24-09-2018'
 __updated__ = '24-09-2018'
 
@@ -82,6 +82,9 @@ class SeleniumProcessor(object):
             logging.error('sign_in error: ' + ex.msg)
             raise
 
+    def quit(self):
+        self.driver.quit()
+
 
 class MyCarSpotForEver(object):
 
@@ -102,6 +105,9 @@ class MyCarSpotForEver(object):
         except NoSuchElementException as ex:
             logging.error('confirm error (invalid credentials or website has changed): ' + ex.msg)
             raise
+
+    def terminate(self):
+        self.selenium.quit()
 
 
 def configure_selenium(driver_name, driver_executable_path, debug=False):
@@ -156,10 +162,15 @@ def main(args=None):
     users = parameters.logins.split(",")
     for user in users:
         login_name, password = user.split(":")
-        mcs = MyCarSpotForEver(selenium_processor, login_name, password)
-        time.sleep(SLEEP_TIME)
-        mcs.confirm()
-        time.sleep(SLEEP_TIME)
+        try:
+            mcs = MyCarSpotForEver(selenium_processor, login_name, password)
+            time.sleep(SLEEP_TIME)
+            mcs.confirm()
+            time.sleep(SLEEP_TIME)
+        except Exception as error:
+            logging.error(error)
+        finally:
+            mcs.terminate()
 
 
 if __name__ == "__main__":
